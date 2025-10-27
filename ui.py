@@ -2,6 +2,40 @@ import cv2
 from config import state, UI_H, BAR_H
 
 
+def draw_gradient_rect(img, x, y, w, h, color1, color2, radius=8):
+    """Draw a rounded rectangle with vertical gradient."""
+    # create overlay for blending
+    overlay = img.copy()
+
+    # draw main rectangle with gradient
+    for i in range(h):
+        ratio = i / h
+        color = tuple(int(c1*(1-ratio) + c2*ratio)
+                      for c1, c2 in zip(color1, color2))
+        cv2.line(overlay, (x+radius, y+i), (x+w-radius, y+i), color, 1)
+
+    # fill corners
+    cv2.ellipse(overlay, (x+radius, y+radius),
+                (radius, radius), 180, 0, 90, color2, -1)
+    cv2.ellipse(overlay, (x+w-radius, y+radius),
+                (radius, radius), 270, 0, 90, color2, -1)
+    cv2.ellipse(overlay, (x+radius, y+h-radius),
+                (radius, radius), 90, 0, 90, color2, -1)
+    cv2.ellipse(overlay, (x+w-radius, y+h-radius),
+                (radius, radius), 0, 0, 90, color2, -1)
+
+    # draw rectangle bodies for corners
+    cv2.rectangle(overlay, (x, y+radius), (x+w, y+h-radius), color2, -1)
+    cv2.rectangle(overlay, (x+radius, y), (x+w-radius, y+h), color2, -1)
+
+    # blend with original image
+    alpha = 0.85
+    cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+
+    # draw border
+    cv2.rectangle(img, (x, y), (x+w, y+h), (40, 40, 40), 2)
+
+
 class Button:
     def __init__(self, x, y, w, h, label, cb=None, toggle_group=None, get_label=None):
         self.r = (x, y, w, h)
@@ -18,12 +52,21 @@ class Button:
     def draw(self, img):
         x, y, w, h = self.r
         txt = self.label if self.get_label is None else self.get_label()
-        col = (90, 90, 90) if self.active else (60, 60, 60)
-        cv2.rectangle(img, (x, y), (x + w, y + h), (200, 200, 200), -1)
-        cv2.rectangle(img, (x + 2, y + 2), (x + w - 2, y + h - 2), col, -1)
-        cv2.rectangle(img, (x, y), (x + w, y + h), (40, 40, 40), 1)
-        cv2.putText(img, txt, (x + 6, y + h - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.48,
-                    (255, 255, 255), 1, cv2.LINE_AA)
+
+        # Colors
+        base_color = (60, 60, 60)
+        active_color = (0, 150, 0)
+        gradient_start = active_color if self.active else (100, 100, 100)
+        gradient_end = (40, 40, 40) if self.active else base_color
+
+        draw_gradient_rect(img, x, y, w, h, gradient_start,
+                           gradient_end, radius=10)
+
+        # Text shadow
+        cv2.putText(img, txt, (x+7, y+h-7), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.52, (0, 0, 0), 2, cv2.LINE_AA)
+        cv2.putText(img, txt, (x+6, y+h-8), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.52, (255, 255, 255), 1, cv2.LINE_AA)
 
 
 def make_toggle_cb(label, group, buttons):
