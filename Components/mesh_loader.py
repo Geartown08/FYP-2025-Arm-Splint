@@ -5,8 +5,6 @@ try:
 except ImportError:
     trimesh = None
 from config import T_BINS
-from newtest import decimate_mesh_np
-from utils import build_t_bins, fit_model_axis, model_uv_from_vertices
 
 # ====================== MESH LOADING & UV PARAMS ====================
 try:
