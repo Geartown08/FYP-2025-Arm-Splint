@@ -1,6 +1,5 @@
 import cv2
-from Components.config import state, UI_H, BAR_H
-
+from config import state, UI_H, BAR_H
 
 def draw_gradient_rect(img, x, y, w, h, color1, color2, radius=8):
     """Draw a rounded rectangle with vertical gradient."""

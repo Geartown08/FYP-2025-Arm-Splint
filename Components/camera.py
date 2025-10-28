@@ -55,3 +55,14 @@ def open_camera(cam_index=0, w=960, h=540, fps=30):
         cap.release()
         last_err = f"backend {be} opened but no frames"
     raise RuntimeError(f"Camera open failed: {last_err}")
+
+def auto_open_camera(max_devices=5, w=1920, h=1080, fps=30):
+    print("[CAM] Auto-detecting camera...")
+    for idx in range(max_devices):
+        try:
+            cap = open_camera(cam_index=idx, w=w, h=h, fps=fps)
+            print(f"[CAM] ✅ Using camera index: {idx}")
+            return cap, idx
+        except:
+            print(f"[CAM] ❌ Camera index {idx} failed")
+    raise RuntimeError("[CAM] ❌ No working camera found")

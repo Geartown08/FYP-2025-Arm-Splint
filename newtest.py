@@ -6,8 +6,8 @@ import sys
 import cv2
 import numpy as np
 from collections import deque
-from Components.camera import open_camera
-from Components.config import CAM_INDEX, FRAME_W, FRAME_H, FRAME_FPS, CALIB_PATH, DICT, WRIST_IDS, FORE_IDS, MARKER_SIZE, GAP_SIZE, T_BINS, MESH_PATH, MESH_UNITS, state, UI_H, BAR_H, DETECT_SCALE, DETECT_EVERY, ROI_MARGIN, WIN, EMA_POS, EMA_AXIS, EMA_RAD, MAX_CENTER_STEP, MAX_RADIUS_STEP  
+from Components.camera import auto_open_camera, open_camera
+from config import CAM_INDEX, FRAME_W, FRAME_H, FRAME_FPS, CALIB_PATH, DICT, WRIST_IDS, FORE_IDS, MARKER_SIZE, GAP_SIZE, T_BINS, MESH_PATH, MESH_UNITS, state, UI_H, BAR_H, DETECT_SCALE, DETECT_EVERY, ROI_MARGIN, WIN, EMA_POS, EMA_AXIS, EMA_RAD, MAX_CENTER_STEP, MAX_RADIUS_STEP
 from Components.exporter import export_surface_obj, export_thickened_obj
 from Components.renderer import painter_fill_mesh_kd, painter_fill_mesh_textured
 from Ui.ui import layout_buttons, on_mouse
@@ -23,7 +23,12 @@ def main():
     K_base, dist_base = cal['K'].astype(
         np.float32), cal['dist'].astype(np.float32)
 
-    cap = open_camera(cam_index=CAM_INDEX, w=FRAME_W, h=FRAME_H, fps=FRAME_FPS)
+    cap, CAM_INDEX = auto_open_camera(
+        max_devices=5,
+        w=FRAME_W,
+        h=FRAME_H,
+        fps=FRAME_FPS
+    )
 
     # ArUco detector (compat)
     aruco = cv2.aruco
