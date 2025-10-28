@@ -6,13 +6,13 @@ import sys
 import cv2
 import numpy as np
 from collections import deque
-from Components.camera import auto_open_camera, open_camera
-from config import CAM_INDEX, FRAME_W, FRAME_H, FRAME_FPS, CALIB_PATH, DICT, WRIST_IDS, FORE_IDS, MARKER_SIZE, GAP_SIZE, T_BINS, MESH_PATH, MESH_UNITS, state, UI_H, BAR_H, DETECT_SCALE, DETECT_EVERY, ROI_MARGIN, WIN, EMA_POS, EMA_AXIS, EMA_RAD, MAX_CENTER_STEP, MAX_RADIUS_STEP
-from Components.exporter import export_surface_obj, export_thickened_obj
-from Components.renderer import painter_fill_mesh_kd, painter_fill_mesh_textured
-from Ui.ui import layout_buttons, on_mouse
-from Components.utils import circle_radius_from_ids, ema, clamp_step, fit_plane, solve_tag_pose
-from Components.mesh_loader import build_t_bins, compute_slice_frames, fit_model_axis, load_mesh_fast, load_mesh_textured, model_uv_from_vertices, wrap_vertices_to_arm_binned
+from components.camera import auto_open_camera, open_camera
+from config import FRAME_W, FRAME_H, FRAME_FPS, CALIB_PATH, DICT, WRIST_IDS, FORE_IDS, T_BINS, MESH_PATH, MESH_UNITS, state, UI_H, BAR_H, DETECT_SCALE, DETECT_EVERY, ROI_MARGIN, WIN, EMA_POS, EMA_AXIS, EMA_RAD, MAX_CENTER_STEP
+from components.exporter import export_surface_obj, export_thickened_obj
+from components.renderer import painter_fill_mesh_kd, painter_fill_mesh_textured
+from Ui.settings import layout_buttons, on_mouse, settings_panel
+from components.utils import circle_radius_from_ids, ema, clamp_step, fit_plane, solve_tag_pose
+from components.mesh_loader import build_t_bins, compute_slice_frames, fit_model_axis, load_mesh_fast, load_mesh_textured, model_uv_from_vertices, wrap_vertices_to_arm_binned
 
 # ============================== MAIN ===============================
 
@@ -138,6 +138,9 @@ def main():
         bar = np.full((BAR_H, frame.shape[1], 3), 30, np.uint8)
         for b in buttons:
             b.draw(bar)
+
+        # --- Draw Settings Panel if open ---
+        settings_panel.draw(frame)
 
         # Intrinsics choice
         if state['use_calib']:

@@ -46,5 +46,6 @@ state = {
     'draw_mesh': True,
     'detect_fast': False,
     'locked': False,
-    'quit': False
+    'quit': False,
+    'settings_open': False
 }

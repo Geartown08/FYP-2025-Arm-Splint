@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from Components.utils import project_points_with_z
+from components.utils import project_points_with_z
 
 
 def painter_fill_mesh_textured(
