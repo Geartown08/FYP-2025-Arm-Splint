@@ -160,13 +160,10 @@ class SettingsPanel:
         elif slider_idx == 1:
             state['t_max'] = 0.5 + 0.5*val_ratio
         elif slider_idx == 2:
-            state['decim_ratio'] = 0.5 + 0.5*val_ratio
-            state['needs_mesh_reload'] = True
-        elif slider_idx == 3:
             # Wrist cm: allow both increase and decrease
             new_val = 14 + val_ratio * (30 - 14)
             state['wrist_cm'] = new_val
-        elif slider_idx == 4:
+        elif slider_idx == 3:
             # Forearm cm: allow both increase and decrease
             new_val = 14 + val_ratio * (30 - 14)
             state['fore_cm'] = new_val
