@@ -95,10 +95,10 @@ class SettingsPanel:
             ("Mesh Opacity", state['alpha'], 0.0, 1.0),
             ("Length", state['t_max'], 0.5, 1.0),
             ("Decimation", state['decim_ratio'], 0.5, 1.0),
-            ("Wrist cm", state['wrist_cm'], 0.0, 20.0),
-            ("Forearm cm", state['fore_cm'], 0.0, 20.0)
+            ("Wrist cm", state['wrist_cm'], 14.0, 30.0),
+            ("Forearm cm", state['fore_cm'], 14.0, 30.0)
         ]
-
+        
         for i, (label, val, vmin, vmax) in enumerate(sliders):
             y_pos = self.y + self.margin + i*40
             self.draw_slider(img, self.x+self.margin, y_pos, self.w-2*self.margin,
@@ -164,9 +164,13 @@ class SettingsPanel:
             state['decim_ratio'] = 0.5 + 0.5*val_ratio
             state['needs_mesh_reload'] = True
         elif slider_idx == 3:
-            state['wrist_cm'] = val_ratio * 20
+            # Wrist cm: only allow decreasing, clamp to [14, current_value]
+            new_val = 14 + val_ratio * (30 - 14)
+            state['wrist_cm'] = min(state['wrist_cm'], new_val)
         elif slider_idx == 4:
-            state['fore_cm'] = val_ratio * 20
+            # Forearm cm: only allow decreasing, clamp to [14, current_value]
+            new_val = 14 + val_ratio * (30 - 14)
+            state['fore_cm'] = min(state['fore_cm'], new_val)
         return True
 
 
