@@ -7,10 +7,11 @@ import cv2
 import numpy as np
 from collections import deque
 from components.camera import auto_open_camera, open_camera
-from config import FRAME_W, FRAME_H, FRAME_FPS, CALIB_PATH, DICT, WRIST_IDS, FORE_IDS, T_BINS, MESH_PATH, MESH_UNITS, state, UI_H, BAR_H, DETECT_SCALE, DETECT_EVERY, ROI_MARGIN, WIN, EMA_POS, EMA_AXIS, EMA_RAD, MAX_CENTER_STEP
+from config import FRAME_W, FRAME_H, FRAME_FPS, CALIB_PATH, DICT, WRIST_IDS, FORE_IDS, T_BINS, MESH_PATH, MESH_UNITS, state, BAR_H, DETECT_SCALE, DETECT_EVERY, ROI_MARGIN, WIN, EMA_POS, EMA_AXIS, EMA_RAD, MAX_CENTER_STEP
 from components.exporter import export_surface_obj, export_thickened_obj
 from components.renderer import painter_fill_mesh_kd, painter_fill_mesh_textured
 from Ui.settings import layout_buttons, on_mouse, settings_panel
+from Ui.hud import draw_hud
 from components.utils import circle_radius_from_ids, ema, clamp_step, fit_plane, solve_tag_pose
 from components.mesh_loader import build_t_bins, compute_slice_frames, fit_model_axis, load_mesh_fast, load_mesh_textured, model_uv_from_vertices, wrap_vertices_to_arm_binned
 
@@ -310,26 +311,12 @@ def main():
             if not drawn:
                 painter_fill_mesh_kd(frame, K_use, dist_use, V_to_draw, F_model, kd_bgr=KD_BGR,
                                      alpha=state['alpha'], ambient=0.22, headlamp=True, cull=state['cull'])
-
-        # Compose & HUD
-        out = np.vstack([bar, frame])
-        cv2.putText(out, f"Wrist IDs: {sorted(wrist_ids_seen)}", (12, BAR_H+20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-        cv2.putText(out,  f"Fore IDs: {sorted(fore_ids_seen)}", (12, BAR_H+42),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-        hud_y = BAR_H + 64
-        cv2.putText(out,
-                    f"Mesh:{'OK' if V_model is not None else 'MISS'}  "
-                    f"V={0 if V_model is None else len(V_model)}  "
-                    f"F={0 if F_model is None else len(F_model)}  "
-                    f"Decim={state.get('decim_ratio', 1.0):.2f}  "
-                    f"Cull={'ON' if state.get('cull', False) else 'OFF'}  "
-                    f"Calib={'OK' if state.get('use_calib', True) else 'FALLBACK'}  "
-                    f"Detect={'FAST' if state.get('detect_fast', False) else 'SAFE'}  "
-                    f"Tex={'YES' if (UV_model is not None and TEX is not None and state['decim_ratio'] >= 0.999) else 'NO'}  "
-                    f"Lock={'ON' if state.get('locked', False) else 'OFF'}",
-                    (12, hud_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
-
+                
+        # --- Compose & HUD ---
+        out = draw_hud(frame, bar, settings_panel,
+                    wrist_ids_seen, fore_ids_seen,
+                    state, V_model, F_model, UV_model, TEX, BAR_H)
+        
         cv2.imshow("Arm Splint", out)
         k = cv2.waitKey(1) & 0xFF
         if k == 27 or state['quit']:

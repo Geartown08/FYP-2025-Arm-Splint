@@ -14,7 +14,7 @@ def draw_gradient_rect(img, x, y, w, h, color1, color2, radius=8):
     cv2.ellipse(overlay, (x+w-radius, y+h-radius), (radius, radius), 0, 0, 90, color2, -1)
     cv2.rectangle(overlay, (x, y+radius), (x+w, y+h-radius), color2, -1)
     cv2.rectangle(overlay, (x+radius, y), (x+w-radius, y+h), color2, -1)
-    alpha = 0.85
+    alpha = 0.7  # slightly lower for better blending
     cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
     cv2.rectangle(img, (x, y), (x+w, y+h), (40, 40, 40), 2)
 
@@ -51,21 +51,19 @@ class Button:
 
 # --- Persistent UI Buttons ---
 def layout_buttons():
-    # Ensure key exists
     if 'settings_open' not in state:
         state['settings_open'] = False
+    if 'dragging_slider' not in state:
+        state['dragging_slider'] = False
 
     btns = []
-    # Settings Tab
     b_settings = Button(8, 8, 120, 34, "Settings",
                         cb=lambda: state.__setitem__('settings_open', not state['settings_open']))
     btns.append(b_settings)
 
-    # Quit Button
     b_quit = Button(140, 8, 100, 34, "Quit",
                     cb=lambda: state.__setitem__("quit", True))
     btns.append(b_quit)
-
     return btns
 
 # --- Settings Panel ---
@@ -76,7 +74,6 @@ class SettingsPanel:
         self.margin = 20
         self.slider_h = 30
 
-        # Persistent toggle buttons inside panel
         self.b_detect = Button(
             self.x+self.margin, self.y+self.margin+200, 120, 30, "Detect",
             cb=lambda: state.__setitem__("detect_fast", not state['detect_fast']),
@@ -92,10 +89,8 @@ class SettingsPanel:
         if not state.get('settings_open', False):
             return
 
-        # Draw background
         cv2.rectangle(img, (self.x, self.y), (self.x+self.w, self.y+self.h), (50, 50, 50), -1)
 
-        # Draw sliders with handles
         sliders = [
             ("Mesh Opacity", state['alpha'], 0.0, 1.0),
             ("Length", state['t_max'], 0.5, 1.0),
@@ -109,39 +104,35 @@ class SettingsPanel:
             self.draw_slider(img, self.x+self.margin, y_pos, self.w-2*self.margin,
                              self.slider_h, val, vmin, vmax, label, mouse_pos)
 
-        # Draw toggle buttons
         self.b_detect.draw(img)
         self.b_lock.draw(img)
 
     def draw_slider(self, img, x, y, w, h, value, min_val, max_val, label="", mouse_pos=None):
-        # Draw track
-        cv2.rectangle(img, (x, y+h//3), (x+w, y+2*h//3), (80, 80, 80), -1)
-        
-        # Draw filled portion
-        fill_w = int((value - min_val) / (max_val - min_val) * w)
-        cv2.rectangle(img, (x, y+h//3), (x+fill_w, y+2*h//3), (0, 150, 0), -1)
+        # Smooth value transition for better visual feel
+        last_key = f"_smooth_{label}"
+        prev_val = getattr(self, last_key, value)
+        smooth_val = 0.8 * prev_val + 0.2 * value
+        setattr(self, last_key, smooth_val)
 
-        # Draw handle
+        cv2.rectangle(img, (x, y+h//3), (x+w, y+2*h//3), (80, 80, 80), -1)
+        fill_w = int((smooth_val - min_val) / (max_val - min_val) * w)
+        fill_w = max(0, min(w, fill_w))
+        cv2.rectangle(img, (x, y+h//3), (x+fill_w, y+2*h//3), (0, 150, 0), -1)
         handle_x = x + fill_w
         handle_y = y + h//2
         cv2.circle(img, (handle_x, handle_y), h//2, (0, 200, 0), -1)
         cv2.circle(img, (handle_x, handle_y), h//2, (0, 0, 0), 2)
 
-        # Hover effect
         if mouse_pos:
             mx, my = mouse_pos
             if (handle_x - h//2 <= mx <= handle_x + h//2) and (handle_y - h//2 <= my <= handle_y + h//2):
                 cv2.circle(img, (handle_x, handle_y), h//2 + 3, (255,255,255), 2)
 
-        # Border
         cv2.rectangle(img, (x, y+h//3), (x+w, y+2*h//3), (40, 40, 40), 2)
-
-        # Label
         cv2.putText(img, f"{label}: {value:.2f}", (x, y-5),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
 
     def handle_click(self, mx, my):
-        # Check toggle buttons first
         if self.b_detect.contains(mx, my):
             self.b_detect.cb()
             return True
@@ -149,13 +140,20 @@ class SettingsPanel:
             self.b_lock.cb()
             return True
 
-        # Sliders
-        rel_y = my - self.y - self.margin
-        slider_idx = int(rel_y // 40)
+        slider_idx = None
+        for i in range(5):
+            y_top = self.y + self.margin + i * 40
+            y_bottom = y_top + self.slider_h
+            if y_top <= my <= y_bottom:
+                slider_idx = i
+                break
+        if slider_idx is None:
+            return False
+
         slider_x, slider_w = self.x + self.margin, self.w - 2*self.margin
         val_ratio = (mx - slider_x) / slider_w
-        val_ratio = max(0.0, min(1.0, val_ratio))  # clamp
-        step = 0.01  # smooth step
+        val_ratio = max(0.0, min(1.0, val_ratio))
+        step = 0.01
         val_ratio = round(val_ratio / step) * step
 
         if slider_idx == 0:
@@ -169,8 +167,7 @@ class SettingsPanel:
             state['wrist_cm'] = val_ratio * 20
         elif slider_idx == 4:
             state['fore_cm'] = val_ratio * 20
-
-        return True if 0 <= slider_idx <= 4 else False
+        return True
 
 
 # --- Global Panel ---
@@ -178,17 +175,25 @@ settings_panel = SettingsPanel()
 
 # --- Mouse callback ---
 def on_mouse(event, mx, my, flags, param):
-    if event != cv2.EVENT_LBUTTONDOWN:
-        return
     buttons = param['buttons']
+    if state.get('settings_open', False):
+        my_panel = my - BAR_H
+    else:
+        my_panel = my
 
-    # Check main buttons (bar)
-    for b in buttons:
-        if b.contains(mx, my):
-            b.cb()
+    if event == cv2.EVENT_LBUTTONDOWN:
+        for b in buttons:
+            if b.contains(mx, my):
+                b.cb()
+                return
+        if state.get('settings_open', False):
+            if settings_panel.handle_click(mx, my_panel):
+                state['dragging_slider'] = True
+        return
+
+    elif event == cv2.EVENT_MOUSEMOVE and state.get('dragging_slider', False):
+        if settings_panel.handle_click(mx, my_panel):
             return
 
-    # Check settings panel if open
-    if state.get('settings_open', False):
-        # Subtract BAR_H from y
-        settings_panel.handle_click(mx, my - BAR_H)
+    elif event == cv2.EVENT_LBUTTONUP:
+        state['dragging_slider'] = False
