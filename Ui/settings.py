@@ -94,7 +94,6 @@ class SettingsPanel:
         sliders = [
             ("Mesh Opacity", state['alpha'], 0.0, 1.0),
             ("Length", state['t_max'], 0.5, 1.0),
-            ("Decimation", state['decim_ratio'], 0.5, 1.0),
             ("Wrist cm", state['wrist_cm'], 14.0, 30.0),
             ("Forearm cm", state['fore_cm'], 14.0, 30.0)
         ]
@@ -164,13 +163,13 @@ class SettingsPanel:
             state['decim_ratio'] = 0.5 + 0.5*val_ratio
             state['needs_mesh_reload'] = True
         elif slider_idx == 3:
-            # Wrist cm: only allow decreasing, clamp to [14, current_value]
+            # Wrist cm: allow both increase and decrease
             new_val = 14 + val_ratio * (30 - 14)
-            state['wrist_cm'] = min(state['wrist_cm'], new_val)
+            state['wrist_cm'] = new_val
         elif slider_idx == 4:
-            # Forearm cm: only allow decreasing, clamp to [14, current_value]
+            # Forearm cm: allow both increase and decrease
             new_val = 14 + val_ratio * (30 - 14)
-            state['fore_cm'] = min(state['fore_cm'], new_val)
+            state['fore_cm'] = new_val
         return True
 
 

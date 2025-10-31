@@ -40,7 +40,7 @@ state = {
     't_max': 1.0,
     'wrist_cm': 16.0,
     'fore_cm': 24.0,
-    'decim_ratio': 1.0,
+    'decim_ratio': 0.7,
     'needs_mesh_reload': False,
     'cull': False,
     'use_calib': True,
