@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 
 # Camera settings
@@ -11,7 +12,7 @@ ROI_MARGIN = 1.40
 
 # ArUco / Geometry
 CALIB_PATH = "camcalib.npz"
-DICT = 4  # cv2.aruco.DICT_4X4_50
+DICT = cv2.aruco.DICT_4X4_50
 WRIST_IDS = set(range(0, 14))
 FORE_IDS = set(range(14, 33))
 MARKER_SIZE = 0.010
